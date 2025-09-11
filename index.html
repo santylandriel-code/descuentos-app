@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de Descuentos</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0d0d0d">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<style>
+  :root {
+    --bg:#0b0b0b;
+    --card:#151515;
+    --muted:#a4a4a4;
+    --accent:#8b5cf6;
+    --text:#f2f2f2;
+    --input:#0f0f10;
+    --border:#2a2a2a;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body {
+    margin:0;
+    font-family:-apple-system,system-ui,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  h1 {
+    text-align:center;
+    font-size:clamp(1.6rem, 2.5vw, 2rem);
+    margin:18px 0 10px;
+    font-weight:700;
+  }
+  .wrap { max-width:920px; margin:0 auto; padding:16px; }
+  .card {
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:16px;
+    box-shadow:0 6px 22px rgba(0,0,0,.45);
+  }
+  label { font-size:.92rem; color:var(--muted); display:block; }
+  input {
+    width:100%;
+    padding:12px 12px;
+    margin-top:6px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--input);
+    color:var(--text);
+    font-size:1rem;
+    outline:none;
+  }
+  input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(139,92,246,.25); }
+  .row { margin-bottom:12px; }
+  .actions{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .btn {
+    appearance:none; -webkit-appearance:none;
+    padding:11px 14px; border-radius:10px; border:1px solid var(--border);
+    background:linear-gradient(180deg,var(--accent),#6d28d9); color:#fff;
+    font-weight:600; cursor:pointer;
+  }
+  .btn.secondary { background:var(--input); border:1px solid var(--border); color:#ddd; }
+  .btn:hover{ filter:brightness(1.02); }
+  .grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+  }
+  @media (max-width:760px){
+    .grid{ grid-template-columns:1fr; }
+  }
+  .table { width:100%; border-collapse:collapse; margin-top:8px; }
+  .table th,.table td {
+    padding:10px; border-bottom:1px dashed var(--border); text-align:right; font-variant-numeric:tabular-nums;
+  }
+  .table th:first-child,.table td:first-child{ text-align:left; }
+  .result {
+    font-size:clamp(1.05rem, 1.6vw, 1.25rem);
+    font-weight:700; text-align:right;
+  }
+  .muted{ color:var(--muted); }
+  .badge {
+    display:inline-block; font-size:.8rem; padding:4px 8px; border-radius:999px;
+    background:rgba(139,92,246,.15); border:1px solid rgba(139,92,246,.35); color:#d9ccff;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Calculadora de Descuentos</h1>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <div class="row"><label>Subtotal</label><input id="subtotal" type="text" inputmode="decimal" placeholder="Ej: 1.157.742,01"></div>
+          <div class="row"><label>IVA (%)</label><input id="iva" type="text" inputmode="decimal" value="21%"></div>
+          <div class="row"><label>Percepciones (%)</label><input id="percep" type="text" inputmode="decimal" value="0%"></div>
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:6px">Descuentos (secuenciales)</div>
+          <div class="actions">
+            <button class="btn" id="add">＋ Agregar descuento</button>
+            <button class="btn secondary" id="clear">Limpiar</button>
+            <button class="btn" id="calc">Calcular</button>
+          </div>
+          <div style="margin-top:8px"><span class="badge" id="efectivoBadge">Efectivo: 0%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table class="table" id="tabla">
+        <thead><tr><th>#</th><th>%</th><th>Base</th><th>Monto</th></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr><td colspan="3" class="muted">Total descuentos</td><td id="totalDesc">$ 0,00</td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div>
+          <div class="row"><label>Subtotal</label><div class="result" id="outSubtotal">$ 0,00</div></div>
+          <div class="row"><label>IVA</label><div class="result" id="outIva">$ 0,00</div></div>
+          <div class="row"><label>Percepciones</label><div class="result" id="outPercep">$ 0,00</div></div>
+          <div class="row"><label>Total bruto</label><div class="result" id="outBruto">$ 0,00</div></div>
+        </div>
+        <div>
+          <div class="row"><label>Total descuentos</label><div class="result" id="outDesc">$ 0,00</div></div>
+          <div class="row"><label>Total final</label><div class="result" id="outFinal">$ 0,00</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+function parsePct(v){
+  if(typeof v!=='string') v=String(v||'');
+  v=v.trim();
+  var hasPct=/%$/.test(v);
+  v=v.replace(/[^0-9,.-]/g,'');
+  if(v.indexOf(',')>-1 && v.indexOf('.')>-1){ v=v.replace(/\./g,''); v=v.replace(',', '.'); }
+  else if(v.indexOf(',')>-1){ v=v.replace('.', ''); v=v.replace(',', '.'); }
+  var n=Number(v); if(!isFinite(n)) return 0;
+  if(hasPct) return n/100; if(n>1) return n/100; return n;
+}
+function parseMoney(v){
+  if(typeof v!=='string') v=String(v||'');
+  v=v.replace(/[^0-9,.-]/g,'');
+  if(v.indexOf(',')>-1 && v.indexOf('.')>-1){ v=v.replace(/\./g,''); v=v.replace(',', '.'); }
+  else if(v.indexOf(',')>-1){ v=v.replace('.', ''); v=v.replace(',', '.'); }
+  var n=Number(v); return isFinite(n)?n:0;
+}
+function fmt(n){ try{ return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(n);}catch(e){ return '$ '+(Math.round(n*100)/100).toFixed(2);} }
+
+var tbody=document.querySelector('#tabla tbody'); var idx=0;
+function addRow(pct){ idx++; var tr=document.createElement('tr');
+ tr.innerHTML='<td>'+idx+'</td>'
+  +'<td><input type="text" class="pct" value="'+(pct||'')+'" placeholder="4%"></td>'
+  +'<td class="base">$ 0,00</td>'
+  +'<td class="monto">$ 0,00</td>';
+ tbody.appendChild(tr);
+}
+function clearRows(){ tbody.innerHTML=''; idx=0; }
+function calc(){
+  var subtotal=parseMoney(document.getElementById('subtotal').value);
+  var iva=parsePct(document.getElementById('iva').value);
+  var percep=parsePct(document.getElementById('percep').value);
+  var pcts=[].slice.call(document.querySelectorAll('.pct')).map(function(i){return parsePct(i.value)}).filter(function(p){return p>0;});
+  document.getElementById('outSubtotal').textContent=fmt(subtotal);
+  var base=subtotal,totalDesc=0;
+  pcts.forEach(function(p){ var d=base*p; totalDesc+=d; base-=d; });
+  var ivaMonto=base*iva; var percepMonto=base*percep;
+  var final=base+ivaMonto+percepMonto;
+  document.getElementById('outIva').textContent=fmt(ivaMonto);
+  document.getElementById('outPercep').textContent=fmt(percepMonto);
+  document.getElementById('outBruto').textContent=fmt(subtotal);
+  document.getElementById('outDesc').textContent=fmt(totalDesc);
+  document.getElementById('totalDesc').textContent=fmt(totalDesc);
+  document.getElementById('outFinal').textContent=fmt(final);
+  var baseDet=subtotal;
+  [].slice.call(tbody.children).forEach(function(tr,i){
+    var p=pcts[i]||0; var d=baseDet*p; tr.querySelector('.base').textContent=fmt(baseDet); tr.querySelector('.monto').textContent=fmt(d); baseDet-=d;
+  });
+  var efectivo=(totalDesc/subtotal)*100;
+  document.getElementById('efectivoBadge').textContent='Efectivo: '+(isFinite(efectivo)? efectivo.toFixed(2):'0.00')+'%';
+}
+document.getElementById('add').onclick=function(){ addRow('4%'); };
+document.getElementById('clear').onclick=function(){ document.getElementById('subtotal').value=''; document.getElementById('iva').value='21%'; document.getElementById('percep').value='0%'; clearRows(); addRow('4%'); addRow('3%'); calc(); };
+document.getElementById('calc').onclick=calc;
+document.addEventListener('input', function(e){ if(['subtotal','iva','percep'].indexOf(e.target.id)>-1 || e.target.classList.contains('pct')) calc(); });
+clearRows(); addRow('4%'); addRow('3%');
+</script>
+
+<!-- PWA: registrar SW -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
+</script>
+
+</body>
+</html>
