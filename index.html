@@ -76,12 +76,39 @@ function parsePct(v){if(typeof v!=='string')v=String(v||'');v=v.trim();var hasPc
 function parseMoney(v){if(typeof v!=='string')v=String(v||'');v=v.replace(/[^0-9,.-]/g,'');if(v.indexOf(',')>-1&&v.indexOf('.')>-1){v=v.replace(/\./g,'');v=v.replace(',', '.');}else if(v.indexOf(',')>-1){v=v.replace('.', '');v=v.replace(',', '.');}var n=Number(v);return isFinite(n)?n:0;}
 function fmt(n){return new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS'}).format(n);}
 
-// --- Formato en vivo para el Subtotal (siempre con $ y miles) ---
-function formatLiveMoney(input){
-  let value = input.value.replace(/[^0-9]/g,'');
-  if(value===''){ input.value='$ '; return; }
-  let number = parseInt(value,10);
-  input.value = '$ ' + new Intl.NumberFormat('es-AR').format(number);
+// --- Formato en vivo para el Subtotal (con $ y separadores, admite coma) ---
+function formatLiveMoney(input) {
+  let v = input.value || "";
+  v = v.replace(/[^\d,]/g, ""); // solo números y coma
+  const hadComma = v.includes(",");
+  const parts = v.split(",");
+  let intPart = parts[0] || "0";
+  let decPart = parts.slice(1).join("").replace(/,/g, "");
+  decPart = decPart.slice(0, 2);
+  intPart = intPart.replace(/^0+(?=\d)/, "");
+  if (intPart === "") intPart = "0";
+  const intNum = parseInt(intPart, 10);
+  const intFmt = new Intl.NumberFormat("es-AR").format(isNaN(intNum)?0:intNum);
+  if (hadComma) {
+    input.value = decPart.length>0 ? `$ ${intFmt},${decPart}` : `$ ${intFmt},`;
+  } else {
+    input.value = `$ ${intFmt}`;
+  }
+}
+
+// --- Máscara de porcentaje en vivo (3 → 3%) ---
+function formatLivePercent(input){
+  let v = (input.value || '').toString();
+  // permitimos números, comas y puntos; normalizamos a coma
+  v = v.replace(/[^0-9,\.]/g,'');
+  v = v.replace(/\./g, ','); // si escriben punto, lo tomamos como coma
+  const parts = v.split(',');
+  let intPart = parts[0] || '0';
+  let decPart = (parts[1] || '').replace(/,/g,'').slice(0,2);
+  intPart = intPart.replace(/^0+(?=\d)/,'');
+  if(intPart==='') intPart='0';
+  const shown = decPart ? intPart+','+decPart : intPart;
+  input.value = shown + '%';
 }
 
 // Tabla de descuentos
@@ -136,7 +163,8 @@ document.getElementById('add').onclick=()=>addRow();
 document.getElementById('calc').onclick=calc;
 document.addEventListener('input',e=>{
   if(e.target.id==='subtotal'){ formatLiveMoney(e.target); }
-  if(['subtotal','iva','percep'].includes(e.target.id) || e.target.classList.contains('pct')) calc();
+  if(e.target.classList && e.target.classList.contains('pct')){ formatLivePercent(e.target); }
+  if(['subtotal','iva','percep'].includes(e.target.id) || (e.target.classList && e.target.classList.contains('pct'))) calc();
 });
 
 // Estado inicial
