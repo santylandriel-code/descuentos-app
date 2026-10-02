@@ -1,0 +1,27 @@
+display_information:
+  name: Equipo IA
+  description: Claude, ChatGPT y Grok en cada canal de proyecto
+features:
+  bot_user:
+    display_name: IA
+    always_online: true
+oauth_config:
+  scopes:
+    bot:
+      - channels:history
+      - channels:read
+      - groups:history
+      - groups:read
+      - chat:write
+      - chat:write.customize
+      - files:read
+settings:
+  event_subscriptions:
+    bot_events:
+      - message.channels
+      - message.groups
+  interactivity:
+    is_enabled: false
+  org_deploy_enabled: false
+  socket_mode_enabled: true
+  token_rotation_enabled: false

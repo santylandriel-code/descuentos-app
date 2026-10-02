@@ -1,0 +1,20 @@
+{
+  "defaultAIs": ["claude", "chatgpt", "grok"],
+  "projects": [
+    {
+      "channel": "bacacay-control-obra",
+      "name": "Bacacay – Control de obra",
+      "context": "Seguimiento y control de la obra Bacacay: avance, certificados, presupuestos, materiales, proveedores y cronograma."
+    },
+    {
+      "channel": "ezequiel-app",
+      "name": "Ezequiel – App",
+      "context": "Desarrollo de la app de Ezequiel: funcionalidades, diseño, código y planificación."
+    },
+    {
+      "channel": "landar",
+      "name": "Landar",
+      "context": "Proyecto Landar."
+    }
+  ]
+}
