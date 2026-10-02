@@ -1,4 +1,4 @@
-import { AIS, aiByName, parseTrigger } from './ais.js';
+import { AIS, JUDGE, aiByName, parseTrigger } from './ais.js';
 import { fileToParts } from './files.js';
 
 export const PLACEHOLDER = '_pensando…_';
@@ -23,13 +23,13 @@ export async function loadTimeline({ client, channel, threadTs, uptoTs, botId, b
     if (Number(m.ts) > Number(uptoTs)) continue;
 
     if (m.bot_id === botId) {
-      const ai = aiByName(m.username);
+      const from = m.username === JUDGE.name ? JUDGE.id : aiByName(m.username)?.id;
       const text = m.text || '';
-      if (!ai || text === PLACEHOLDER || text.startsWith(ERROR_PREFIX)) continue;
+      if (!from || text === PLACEHOLDER || text.startsWith(ERROR_PREFIX)) continue;
       const prev = timeline.at(-1);
       // Las respuestas largas se parten en varios mensajes: se vuelven a unir.
-      if (prev?.from === ai.id) prev.parts.push({ type: 'text', text });
-      else timeline.push({ from: ai.id, parts: [{ type: 'text', text }] });
+      if (prev?.from === from) prev.parts.push({ type: 'text', text });
+      else timeline.push({ from, parts: [{ type: 'text', text }] });
       continue;
     }
     if (m.bot_id || (m.subtype && m.subtype !== 'file_share' && m.subtype !== 'thread_broadcast')) continue;
@@ -51,7 +51,8 @@ export function toConversation(timeline, aiId) {
     if (entry.from === aiId) {
       role = 'assistant';
     } else if (entry.from !== 'user') {
-      parts = [{ type: 'text', text: `[Respuesta de ${AIS[entry.from].name}]` }, ...parts];
+      const label = entry.from === JUDGE.id ? 'Decisión del Juez' : `Respuesta de ${AIS[entry.from].name}`;
+      parts = [{ type: 'text', text: `[${label}]` }, ...parts];
     } else if (entry.targets && !entry.targets.includes(aiId)) {
       const names = entry.targets.map((t) => AIS[t].name).join(' y ');
       parts = [{ type: 'text', text: `[Mensaje del usuario dirigido a ${names}]` }, ...parts];
@@ -63,4 +64,13 @@ export function toConversation(timeline, aiId) {
   }
   while (conversation[0]?.role === 'assistant') conversation.shift();
   return conversation;
+}
+
+/** Agrega una indicación del sistema como último mensaje del usuario. */
+export function withInstruction(conversation, text) {
+  const result = conversation.map((m) => ({ ...m, parts: [...m.parts] }));
+  const last = result.at(-1);
+  if (last?.role === 'user') last.parts.push({ type: 'text', text });
+  else result.push({ role: 'user', parts: [{ type: 'text', text }] });
+  return result;
 }

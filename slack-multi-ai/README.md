@@ -21,10 +21,19 @@ En el canal del proyecto escribí:
 | `claude y grok: ...`             | Claude y Grok               |
 | `todas: ...` o `las 3: ...`      | Las tres                    |
 | `@IA ...`                        | Las IAs por defecto (las 3) |
+| `decidir: ¿A o B?`               | Las 3 proponen, se verifican entre ellas y el **Juez** decide |
 
 - Cada IA contesta **en un hilo**, con su nombre e ícono. Seguí hablando en ese hilo
   y todas tienen la conversación completa, **incluidas las respuestas de las otras**:
   `claude: ¿qué opinás de lo que dijo Grok?` funciona.
+- **`decidir:`** hace tres rondas en el mismo hilo:
+  1. **Propuestas**: Claude, ChatGPT y Grok responden por separado.
+  2. **Verificación**: cada una revisa las otras respuestas (errores, datos sin respaldo,
+     riesgos) y vota.
+  3. **Juez** :scales:: lee todo y da la decisión final con el por qué, los riesgos, el
+     próximo paso y qué tan seguro está. El Juez se elige en `.env` con `JUDGE_AI`.
+
+  Después podés seguir en el hilo (`grok: ¿estás de acuerdo con el Juez?`).
 - Mensajes sin prefijo no disparan nada, así podés charlar con personas en el mismo canal.
 - **Documentos**: adjuntalos en el mensaje (o antes, en el mismo hilo). Soporta PDF,
   Word (.docx), Excel (.xlsx/.xls/.csv), imágenes (PNG/JPG/WebP/GIF) y texto/código.
@@ -68,15 +77,22 @@ IAs contexto fijo de un proyecto (datos clave, decisiones, personas), creá
 ## Dónde dejarlo corriendo
 
 Usa *Socket Mode*, así que **no necesita URL pública ni dominio**. Opciones:
-- Tu compu (`npm start`): funciona mientras esté prendida.
+- Tu compu (`npm start`): funciona mientras esté prendida. Costo $0.
+- [Oracle Cloud *Always Free*](https://www.oracle.com/cloud/free/): un servidor chico gratis
+  para siempre (pide tarjeta para verificar identidad).
 - Un servidor siempre prendido: [Railway](https://railway.app), [Render](https://render.com)
   (tipo *Background Worker*) o [Fly.io](https://fly.io). Subí esta carpeta, cargá las
   variables del `.env` en su panel y el comando de inicio es `npm start`.
 
 Netlify no sirve para esto porque no mantiene procesos corriendo.
 
-## Modelos
+## Modelos y costo
 Se cambian en el `.env` sin tocar código: `CLAUDE_MODEL`, `OPENAI_MODEL`, `XAI_MODEL`.
+Un `decidir:` hace 7 consultas (3 propuestas + 3 verificaciones + Juez). Con los modelos
+chicos que aparecen comentados en `.env.example` el costo baja mucho.
+
+Funciona con el **Slack gratis** (el plan gratis permite hasta 10 apps; solo muestra los
+últimos 90 días de historial).
 
 ## Tests
 ```bash

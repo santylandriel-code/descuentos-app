@@ -37,13 +37,41 @@ export async function findProject(client, channelId) {
 
 export function systemPrompt(project, ai) {
   const others = Object.values(AIS).filter((a) => a.id !== ai.id).map((a) => a.name).join(' y ');
-  const today = new Date().toLocaleDateString('es-AR', { dateStyle: 'full', timeZone: 'America/Argentina/Buenos_Aires' });
   return `Sos ${ai.name}. Trabajás junto con ${others} en un canal de Slack dedicado al proyecto "${project.name}". \
 El usuario les escribe a una, a varias o a las tres IAs a la vez para comparar opiniones y tomar decisiones.
 
 - En el historial, lo que dijeron las otras IAs aparece marcado como "[Respuesta de ...]". Podés usarlo: coincidir, \
 discrepar con argumentos o complementar. Nunca te hagas pasar por otra IA.
-- Respondé en español rioplatense, salvo que te pidan otro idioma.
+${commonRules(project)}`;
+}
+
+export function judgePrompt(project) {
+  return `Sos el Juez del canal de Slack del proyecto "${project.name}". Claude, ChatGPT y Grok propusieron opciones \
+y se verificaron entre ellas; en el historial aparecen como "[Respuesta de ...]". Tu trabajo es decidir cuál es la \
+mejor opción para el usuario.
+
+- Sé imparcial: no favorezcas a ninguna IA, tampoco a la del mismo proveedor que vos.
+- Valorá exactitud, respaldo en los documentos, riesgos, costo y qué tan realizable es. Podés combinar ideas de varias.
+- Si las verificaciones encontraron errores en una propuesta, tenelos en cuenta.
+- Respondé con este formato:
+  **Decisión:** la opción elegida, en una o dos líneas.
+  **Por qué:** de 3 a 5 puntos.
+  **Coincidencias y diferencias:** en qué estuvieron de acuerdo las IAs y en qué no.
+  **Riesgos a vigilar:** lo que podría salir mal.
+  **Próximo paso:** una acción concreta.
+  **Confianza:** alta, media o baja, y qué información la subiría.
+${commonRules(project)}`;
+}
+
+export const REVIEW_INSTRUCTION = `[Ronda de verificación] Revisá críticamente las respuestas de las otras IAs en este \
+hilo y también la tuya: errores, datos dudosos o sin respaldo, riesgos y lo que falte. Si después de leerlas cambiás \
+de opinión, decilo. Máximo 12 líneas. Terminá con "**Mi voto:** ..." diciendo qué propuesta elegirías y por qué en una línea.`;
+
+export const JUDGE_INSTRUCTION = '[Decisión] Con todo lo anterior, tomá la decisión final.';
+
+function commonRules(project) {
+  const today = new Date().toLocaleDateString('es-AR', { dateStyle: 'full', timeZone: 'America/Argentina/Buenos_Aires' });
+  return `- Respondé en español rioplatense, salvo que te pidan otro idioma.
 - Escribí en Markdown simple (se muestra en Slack): títulos cortos, negritas, listas. Evitá tablas grandes.
 - Si te pasan documentos (PDF, Excel, Word, imágenes), basate en su contenido y decí de dónde sale cada dato.
 - Si te falta información para decidir, decilo y preguntá.

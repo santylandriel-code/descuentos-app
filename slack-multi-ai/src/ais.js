@@ -37,6 +37,13 @@ export const AIS = {
   },
 };
 
+// El Juez no es una cuarta IA: es una de las tres (JUDGE_AI) con otro rol y otro nombre en Slack.
+export const JUDGE = { id: 'judge', name: 'Juez', icon: ':scales:' };
+
+export function judgeAI() {
+  return AIS[env.JUDGE_AI] || AIS.claude;
+}
+
 export function aiByName(name) {
   return Object.values(AIS).find((ai) => ai.name === name);
 }
@@ -44,11 +51,13 @@ export function aiByName(name) {
 // --- Cómo se le habla a cada IA en un mensaje ---------------------------------
 // "claude: ...", "grok, ...", "claude y chatgpt: ...", "todas: ...", "las 3: ..."
 // o mencionando al bot (@IA ...), que usa las IAs por defecto del proyecto.
+// "decidir: ..." arranca una ronda de propuestas, verificación cruzada y decisión del Juez.
 
 const NAME = String.raw`(?:claude|chatgpt|gpt|openai|grok|todas|todos|all|las\s*(?:3|tres))\b`;
 const SEP = String.raw`\s*(?:,|\+|&|\sy\s|\se\s)\s*`;
 const LIST = new RegExp(String.raw`^(${NAME}(?:${SEP}${NAME})*)\s*([:,])?`, 'i');
 
+const DECIDE = /^(?:decid[ií]r?|decisi[oó]n)(?![\p{L}\d])\s*([:,])?/iu;
 const ALIASES = { claude: 'claude', chatgpt: 'chatgpt', gpt: 'chatgpt', openai: 'chatgpt', grok: 'grok' };
 
 export function parseTrigger(text, botUserId) {
@@ -58,6 +67,11 @@ export function parseTrigger(text, botUserId) {
   if (mention && rest.startsWith(mention)) {
     rest = rest.slice(mention.length).trim();
     mentioned = true;
+  }
+
+  const decide = rest.match(DECIDE);
+  if (decide && (decide[1] || mentioned)) {
+    return { mode: 'decide', targets: null, text: rest.slice(decide[0].length).trim() };
   }
 
   const targets = new Set();
